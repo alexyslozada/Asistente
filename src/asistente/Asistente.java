@@ -225,7 +225,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sbt.append("character varying");
                     }
-                    if (tipoColumna[i].equals("timastamp")) {
+                    if (tipoColumna[i].equals("timestamp")) {
                         sbt.append("timestamp");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -239,7 +239,7 @@ public class Asistente extends JFrame {
                 sbt.append(")");
                 sb.append(sbt);
                 sb.append("\n");
-                sb.append("RETURNS smallint AS\n");
+                sb.append("RETURNS integer AS\n");
                 sb.append("$BODY$\n");
                 sb.append("declare\n");
                 for (int i = 1; i < nombreColumna.length; i++) {
@@ -361,7 +361,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sbt.append("character varying");
                     }
-                    if (tipoColumna[i].equals("timastamp")) {
+                    if (tipoColumna[i].equals("timestamp")) {
                         sbt.append("timestamp");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -480,7 +480,8 @@ public class Asistente extends JFrame {
                 sb.append("package objetos.ingenioti.org;\n\n");
                 sb.append("import interfaces.ingenioti.org.IObjetoHci;\n\n");
                 sb.append("public class O");
-                sb.append(jcTabla.getSelectedItem());
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append(" implements IObjetoHci{\n");
                 for (int i = 0; i < columnas; i++) {
                     sb.append("\tprivate ");
@@ -493,7 +494,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("String");
                     }
-                    if (tipoColumna[i].equals("timastamp")) {
+                    if (tipoColumna[i].equals("timestamp")) {
                         sb.append("Calendar");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -512,18 +513,33 @@ public class Asistente extends JFrame {
                 sb.append("\n");
                 sb.append("//NEGOCIO\n");
                 sb.append("package negocio.ingenioti.org;\n");
+                sb.append("import excepciones.ingenioti.org.ExcepcionGeneral;");
                 sb.append("import java.sql.SQLException;\n");
                 sb.append("import java.util.ArrayList;\n");
+                sb.append("import objetos.ingenioti.org.O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(";\n");
+                sb.append("import objetos.ingenioti.org.O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(";\n");
                 sb.append("public class N");
-                sb.append(jcTabla.getSelectedItem());
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append(" extends NGeneralidades {\n");
+                sb.append("\tprivate final String MIOBJETO =\"\";\n");
                 //INSERTAR
-                sb.append("\tpublic Short insertar(O");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" obj){\n");
-                sb.append("\t\tShort respuesta = 0;\n");
+                sb.append("\tpublic int ejecutarSQL(short ta, O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(" obj, OCredencial cre) throws ExcepcionGeneral {\n");
+                sb.append("\t\tint respuesta = 0;\n");
+                sb.append("\t\tif(NUtilidades.tienePermiso(ta, cre.getUsuario().getPerfil().getIdperfil(), MIOBJETO)){\n");
                 sb.append("\t\ttry{\n");
-                sb.append("\t\t\tconectar(\"select * from fn_");
+                sb.append("\t\t\tswitch(ta){\n");
+                sb.append("\t\t\t\tcase 1: // Insertar\n");
+                sb.append("\t\t\t\t\tconectar(\"select * from fn_");
                 sb.append(jcTabla.getSelectedItem());
                 sb.append("_ins(");
                 for (int i = 1; i < columnas; i++) {
@@ -534,7 +550,7 @@ public class Asistente extends JFrame {
                 }
                 sb.append(")\");\n");
                 for (int i = 1; i < columnas; i++) {
-                    sb.append("\t\t\tsentenciaProcedimiento.set");
+                    sb.append("\t\t\t\t\tsentenciaProcedimiento.set");
                     if (tipoColumna[i].equals("int2")) {
                         sb.append("Short");
                     }
@@ -544,7 +560,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("String");
                     }
-                    if (tipoColumna[i].equals("timastamp")) {
+                    if (tipoColumna[i].equals("timestamp")) {
                         sb.append("Date");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -553,31 +569,13 @@ public class Asistente extends JFrame {
                     sb.append("(");
                     sb.append(i);
                     sb.append(", obj.get");
-                    sb.append(nombreColumna[i]);
+                    sb.append(nombreColumna[i].toString().substring(0, 1).toUpperCase());
+                    sb.append(nombreColumna[i].toString().substring(1));
                     sb.append("());\n");
                 }
-                sb.append("\t\t\tgetResultadosProcedimiento();\n");
-                sb.append("\t\t\tif (resultados.next()) {\n");
-                sb.append("\t\t\t\trespuesta = resultados.getShort(1);\n");
-                sb.append("\t\t\t}\n");
-                sb.append("\t\t} catch (SQLException sql) {\n");
-                sb.append("\t\t\tSystem.err.println(\"Error en N");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" insertar: \" + sql.getMessage());\n");
-                sb.append("\t\t} finally {\n");
-                sb.append("\t\t\ttry{\n");
-                sb.append("\t\t\t\tcerrarConexion();\n");
-                sb.append("\t\t\t} catch (SQLException sqle){}\n");
-                sb.append("\t\t}\n");
-                sb.append("\t\treturn respuesta;\n");
-                sb.append("\t}\n");
-                //ACTUALIZAR
-                sb.append("\tpublic Short actualizar(O");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" obj){\n");
-                sb.append("\t\tShort respuesta = 0;\n");
-                sb.append("\t\ttry{\n");
-                sb.append("\t\t\tconectar(\"select * from fn_");
+                sb.append("\t\t\t\t\tbreak;\n");
+                sb.append("\t\t\t\tcase 2: //ACTUALIZAR\n");
+                sb.append("\t\t\t\t\tconectar(\"select * from fn_");
                 sb.append(jcTabla.getSelectedItem());
                 sb.append("_upd(");
                 for (int i = 0; i < columnas; i++) {
@@ -588,7 +586,7 @@ public class Asistente extends JFrame {
                 }
                 sb.append(")\");\n");
                 for (int i = 0; i < columnas; i++) {
-                    sb.append("\t\t\tsentenciaProcedimiento.set");
+                    sb.append("\t\t\t\t\tsentenciaProcedimiento.set");
                     if (tipoColumna[i].equals("int2")) {
                         sb.append("Short");
                     }
@@ -598,7 +596,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("String");
                     }
-                    if (tipoColumna[i].equals("timastamp")) {
+                    if (tipoColumna[i].equals("timestamp")) {
                         sb.append("Date");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -607,34 +605,16 @@ public class Asistente extends JFrame {
                     sb.append("(");
                     sb.append(i+1);
                     sb.append(", obj.get");
-                    sb.append(nombreColumna[i]);
+                    sb.append(nombreColumna[i].toString().substring(0, 1).toUpperCase());
+                    sb.append(nombreColumna[i].toString().substring(1));
                     sb.append("());\n");
                 }
-                sb.append("\t\t\tgetResultadosProcedimiento();\n");
-                sb.append("\t\t\tif (resultados.next()) {\n");
-                sb.append("\t\t\t\trespuesta = resultados.getShort(1);\n");
-                sb.append("\t\t\t}\n");
-                sb.append("\t\t} catch (SQLException sql) {\n");
-                sb.append("\t\t\tSystem.err.println(\"Error en N");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" actualizar: \" + sql.getMessage());\n");
-                sb.append("\t\t} finally {\n");
-                sb.append("\t\t\ttry{\n");
-                sb.append("\t\t\t\tcerrarConexion();\n");
-                sb.append("\t\t\t} catch (SQLException sqle){}\n");
-                sb.append("\t\t}\n");
-                sb.append("\t\treturn respuesta;\n");
-                sb.append("\t}\n");
-                //BORRAR
-                sb.append("\tpublic Short borrar(O");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" obj){\n");
-                sb.append("\t\tShort respuesta = 0;\n");
-                sb.append("\t\ttry{\n");
-                sb.append("\t\t\tconectar(\"select * from fn_");
+                sb.append("\t\t\t\t\tbreak;\n");
+                sb.append("\t\t\t\tcase 3: //BORRAR\n");
+                sb.append("\t\t\t\t\tconectar(\"select * from fn_");
                 sb.append(jcTabla.getSelectedItem());
                 sb.append("_del(?)\");\n");
-                sb.append("\t\t\tsentenciaProcedimiento.set");
+                sb.append("\t\t\t\t\tsentenciaProcedimiento.set");
                 if (tipoColumna[0].equals("int2")) {
                     sb.append("Short");
                 }
@@ -642,40 +622,53 @@ public class Asistente extends JFrame {
                     sb.append("Integer");
                 }
                 sb.append("(1, obj.get");
-                sb.append(nombreColumna[0]);
+                sb.append(nombreColumna[0].toString().substring(0, 1).toUpperCase());
+                sb.append(nombreColumna[0].toString().substring(1));
                 sb.append("());\n");
+                sb.append("\t\t\t\t\tbreak;\n");
+                sb.append("\t\t\t\tdefault:\n");
+                sb.append("\t\t\t\t\tthrow new ExcepcionGeneral(\"Acción no valida.\");\n");
+                sb.append("\t\t\t\t}\n");
                 sb.append("\t\t\tgetResultadosProcedimiento();\n");
                 sb.append("\t\t\tif (resultados.next()) {\n");
-                sb.append("\t\t\t\trespuesta = resultados.getShort(1);\n");
+                sb.append("\t\t\t\trespuesta = resultados.getInt(1);\n");
                 sb.append("\t\t\t}\n");
                 sb.append("\t\t} catch (SQLException sql) {\n");
                 sb.append("\t\t\tSystem.err.println(\"Error en N");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" borrar: \" + sql.getMessage());\n");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(" insertar: \" + sql.getMessage());\n");
                 sb.append("\t\t} finally {\n");
                 sb.append("\t\t\ttry{\n");
                 sb.append("\t\t\t\tcerrarConexion();\n");
                 sb.append("\t\t\t} catch (SQLException sqle){}\n");
                 sb.append("\t\t}\n");
+                sb.append("\t\t}\n");
                 sb.append("\t\treturn respuesta;\n");
                 sb.append("\t}\n");
                 //CONSULTAR
                 sb.append("\tpublic ArrayList<O");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append("> consultar(Short tc, O");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" obj){\n");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("> consultar(short ta, short tc, O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(" obj, OCredencial cre)\n");
+                sb.append("\t\t\tthrows ExcepcionGeneral {\n");
                 sb.append("\t\tArrayList<O");
-                sb.append(jcTabla.getSelectedItem());
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append("> lista = new ArrayList<O");
-                sb.append(jcTabla.getSelectedItem());
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append(">();\n");
-                sb.append("\t\ttry{\n");
-                sb.append("\t\t\tconectar(\"select * from fn_");
+                sb.append("\t\tif(NUtilidades.tienePermiso(ta, cre.getUsuario().getPerfil().getIdperfil(), MIOBJETO)){\n");
+                sb.append("\t\t\ttry{\n");
+                sb.append("\t\t\t\tconectar(\"select * from fn_");
                 sb.append(jcTabla.getSelectedItem());
                 sb.append("_sel(?,?)\");\n");
-                sb.append("\t\t\tsentenciaProcedimiento.setShort(1, tc);\n");
-                sb.append("\t\t\tsentenciaProcedimiento.set");
+                sb.append("\t\t\t\tsentenciaProcedimiento.setShort(1, tc);\n");
+                sb.append("\t\t\t\tsentenciaProcedimiento.set");
                 if (tipoColumna[1].equals("int2")) {
                     sb.append("Short");
                 }
@@ -685,15 +678,17 @@ public class Asistente extends JFrame {
                 sb.append("(2, obj.get");
                 sb.append(nombreColumna[0]);
                 sb.append("());\n");
-                sb.append("\t\t\tgetResultadosProcedimiento();\n");
-                sb.append("\t\t\twhile(resultados.next()){\n");
-                sb.append("\t\t\t\tO");
-                sb.append(jcTabla.getSelectedItem());
+                sb.append("\t\t\t\tgetResultadosProcedimiento();\n");
+                sb.append("\t\t\t\twhile(resultados.next()){\n");
+                sb.append("\t\t\t\t\tO");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append(" temp = new O");
-                sb.append(jcTabla.getSelectedItem());
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append("();\n");
                 for(int i = 0; i < columnas; i++){
-                    sb.append("\t\t\t\ttemp.set");
+                    sb.append("\t\t\t\t\ttemp.set");
                     sb.append(nombreColumna[i]);
                     sb.append("(resultados.get");
                     if (tipoColumna[i].equals("int2")) {
@@ -705,7 +700,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("String");
                     }
-                    if (tipoColumna[i].equals("timastamp")) {
+                    if (tipoColumna[i].equals("timestamp")) {
                         sb.append("Date");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -715,20 +710,273 @@ public class Asistente extends JFrame {
                     sb.append(i+1);
                     sb.append("));\n");
                 }
-                sb.append("\t\t\t\tlista.add(temp);\n");
-                sb.append("\t\t\t}\n");
-                sb.append("\t\t} catch (SQLException sql) {\n");
-                sb.append("\t\t\tSystem.err.println(\"Error en N");
-                sb.append(jcTabla.getSelectedItem());
+                sb.append("\t\t\t\t\tlista.add(temp);\n");
+                sb.append("\t\t\t\t}\n");
+                sb.append("\t\t\t} catch (SQLException sql) {\n");
+                sb.append("\t\t\t\tSystem.err.println(\"Error en N");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append(" consultar: \" + sql.getMessage());\n");
-                sb.append("\t\t} finally {\n");
-                sb.append("\t\t\ttry{\n");
-                sb.append("\t\t\t\tcerrarConexion();\n");
-                sb.append("\t\t\t} catch (SQLException sqle){}\n");
+                sb.append("\t\t\t} finally {\n");
+                sb.append("\t\t\t\ttry{\n");
+                sb.append("\t\t\t\t\tcerrarConexion();\n");
+                sb.append("\t\t\t\t} catch (SQLException sqle){}\n");
+                sb.append("\t\t\t}\n");
+                sb.append("\t\t} else {\n");
+                sb.append("\t\t\tthrow new ExcepcionGeneral(getNoAutenticado());\n");
                 sb.append("\t\t}\n");
                 sb.append("\t\treturn lista;\n");
-                sb.append("\t}");
-
+                sb.append("\t}\n");
+                sb.append("}\n");
+                //SERVLET
+                sb.append("//SERVLET\n");
+                sb.append("package servlets.ingenioti.org;\n");
+                sb.append("import excepciones.ingenioti.org.ExcepcionGeneral;\n");
+                sb.append("import java.io.IOException;\n");
+                sb.append("import java.util.ArrayList;\n");
+                sb.append("import javax.servlet.ServletException;\n");
+                sb.append("import javax.servlet.annotation.WebServlet;\n");
+                sb.append("import javax.servlet.http.HttpServlet;\n");
+                sb.append("import javax.servlet.http.HttpServletRequest;\n");
+                sb.append("import javax.servlet.http.HttpServletResponse;\n");
+                sb.append("import javax.servlet.http.HttpSession;\n");
+                sb.append("import objetos.ingenioti.org.OCredencial;\n");
+                sb.append("import negocio.ingenioti.org.N");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(";\n");
+                sb.append("import objetos.ingenioti.org.O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(";\n");
+                sb.append("@WebServlet(name = \"S");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("\", urlPatterns = {\"/S");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("\"}\n");
+                sb.append("public class S");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(" extends HttpServlet {\n");
+                sb.append("\tprotected void processRequest(HttpServletRequest request, HttpServletResponse response)\n");
+                sb.append("\t\t\tthrows ServletException, IOException {\n");
+                sb.append("\t\tresponse.setContentType(\"text/html;charset=UTF-8\");\n");
+                sb.append("\t\tHttpSession sesion = request.getSession();\n");
+                sb.append("\t\tif(SUtilidades.autenticado(sesion)) {\n");
+                sb.append("\t\t\tString mensaje = \"\";\n");
+                sb.append("\t\t\tString tipoMensaje = \"\";\n");
+                sb.append("\t\t\tString mensajeLista = \"\";\n");
+                sb.append("\t\t\tString tipoMensajeLista = \"\";\n");                
+                sb.append("\t\t\tOCredencial credencial = (OCredencial) sesion.getAttribute(\"credencial\");\n");
+                sb.append("\t\t\tString accion = request.getParameter(\"accion\");\n");
+                sb.append("\t\t\tString tipoConsulta = request.getParameter(\"tipoConsulta\");\n");
+                sb.append("\t\t\tShort sAccion;\n");
+                sb.append("\t\t\tShort sTipoConsulta;\n");
+                sb.append("\t\t\ttry {\n");
+                sb.append("\t\t\t\tsAccion = Short.parseShort(accion);\n");
+                sb.append("\t\t\t} catch (NumberFormatException nfe) {\n");
+                sb.append("\t\t\t\tsAccion = 0;\n");
+                sb.append("\t\t\t}\n");
+                sb.append("\t\t\ttry {\n");
+                sb.append("\t\t\t\tsTipoConsulta = Short.parseShort(tipoConsulta);\n");
+                sb.append("\t\t\t} catch (NumberFormatException nfe) {\n");
+                sb.append("\t\t\t\tsTipoConsulta = 0;\n");
+                sb.append("\t\t\t}\n");
+                for(int i = 0; i < columnas; i++){
+                    if(tipoColumna[i].equals("timestamp")){
+                        sb.append("\t\t\tSimpleDateFormat sdf = new SimpleDateFormat(\"dd/MM/yyyy\");\n");
+                        break;
+                    }
+                }
+                for(int i = 0; i < columnas; i++){
+                    sb.append("\t\t\tString s");
+                    sb.append(nombreColumna[i]);
+                    sb.append(" = request.getParameter(\"_");
+                    sb.append(nombreColumna[i]);
+                    sb.append("\");\n");
+                }
+                for (int i = 0; i < columnas; i++) {
+                    if (tipoColumna[i].equals("int2") || tipoColumna[i].equals("int4") || tipoColumna[i].equals("serial")) {
+                        if(tipoColumna[i].equals("int2")){
+                            sb.append("\t\t\tshort i");
+                        } else {
+                            sb.append("\t\t\tint i");
+                        }
+                        sb.append(nombreColumna[i]);
+                        sb.append(" = 0;\n");
+                        sb.append("\t\t\ttry{\n");
+                        sb.append("\t\t\t\ti");
+                        sb.append(nombreColumna[i]);
+                        if(tipoColumna[i].equals("int2")){
+                            sb.append(" = Short.parseShort(s");
+                        } else {
+                            sb.append(" = Integer.parseInt(s");
+                        }
+                        sb.append(nombreColumna[i]);
+                        sb.append(");\n");
+                        sb.append("\t\t\t} catch (NumberFormatException nfe){\n");
+                        sb.append("\t\t\t\tSystem.err.println(\"Error al convertir: _");
+                        sb.append(nombreColumna[i]);
+                        if(tipoColumna[i].equals("int2")){
+                            sb.append(" en Short ");
+                        } else {
+                            sb.append(" en int ");
+                        }
+                        sb.append(" en el servlet S");
+                        sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                        sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                        sb.append("\");\n");
+                        sb.append("\t\t\t}\n");
+                    }
+                    if (tipoColumna[i].equals("timestamp")) {
+                        sb.append("\t\t\tCalendar c");
+                        sb.append(nombreColumna[i]);
+                        sb.append(" = new GregorianCalendar();\n");
+                        sb.append("\t\t\ttry{\n");
+                        sb.append("\t\t\t\tc");
+                        sb.append(nombreColumna[i]);
+                        sb.append(".setTime(sdf.parse(s");
+                        sb.append(nombreColumna[i]);
+                        sb.append("));\n");
+                        sb.append("\t\t\t} catch (ParseException pe){\n");
+                        sb.append("\t\t\t\tSystem.err.println(\"Error al convertir: _");
+                        sb.append(nombreColumna[i]);
+                        sb.append(" en fecha en el Servlet S");
+                        sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                        sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                        sb.append("\");\n");
+                        sb.append("\t\t\t}\n");
+                        
+                    }
+                    if (tipoColumna[i].equals("bool")) {
+                        sb.append("boolean b");
+                        sb.append(nombreColumna[i]);
+                        sb.append(" = s");
+                        sb.append(nombreColumna[i]);
+                        sb.append(" != null;\n");
+                    }
+                }
+                sb.append("\t\t\tArrayList<O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("> lista = new ArrayList<O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(">();\n");
+                sb.append("\t\t\t\tN");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(" n");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(" = new N");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("();\n");
+                sb.append("\t\t\t\tO");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(" o");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(" = new O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("(");
+                for(int i = 0; i < columnas; i++){
+                    if (tipoColumna[i].equals("int2") || tipoColumna[i].equals("int4") || tipoColumna[i].equals("serial")) {
+                        sb.append("i");
+                    }
+                    if (tipoColumna[i].equals("varchar")) {
+                        sb.append("s");
+                    }
+                    if (tipoColumna[i].equals("timestamp")) {
+                        sb.append("c");
+                    }
+                    if (tipoColumna[i].equals("bool")) {
+                        sb.append("b");
+                    }
+                    sb.append(nombreColumna[i]);
+                    if(i < columnas-1){
+                        sb.append(", ");
+                    }
+                }
+                sb.append(");\n");
+                sb.append("\t\t\t// Para realizar la acción de la 1 a la 3\n");
+                sb.append("\t\t\tif(sAccion > 0 && sAccion < 4){\n");
+                sb.append("\t\t\t\tint respuesta = 0;\n");
+                sb.append("\t\t\t\ttry{\n");
+                sb.append("\t\t\t\t\trespuesta = n");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(".ejecutarSQL(sAccion, o");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(", credencial);\n");
+                sb.append("\t\t\t\t\ttipoMensaje = \"alert-danger\";\n");
+                sb.append("\t\t\t\t\tswitch (respuesta) {\n");
+                sb.append("\t\t\t\t\t\tcase 0:\n");
+                sb.append("\t\t\t\t\t\t\tmensaje = \"No existe el objeto a procesar o no se realizó la acción\";\n");
+                sb.append("\t\t\t\t\t\t\tbreak;\n");
+                sb.append("\t\t\t\t\t\tcase 1:\n");
+                sb.append("\t\t\t\t\t\t\ttipoMensaje = \"alert-success\";\n");
+                sb.append("\t\t\t\t\t\t\tmensaje = \"Proceso realizado correctamente\";\n");
+                sb.append("\t\t\t\t\t\t\tbreak;\n");
+                sb.append("\t\t\t\t\t\tcase -1:\n");
+                sb.append("\t\t\t\t\t\t\tmensaje = \"Violación de clave única. No pueden existir dos id repetidos.\";\n");
+                sb.append("\t\t\t\t\t\t\tbreak;\n");
+                sb.append("\t\t\t\t\t\tcase -2:\n");
+                sb.append("\t\t\t\t\t\t\tmensaje = \"Error de llave foranea. No existe la llave primaria o esta tabla tiene dependencias.\";\n");
+                sb.append("\t\t\t\t\t\t\tbreak;\n");
+                sb.append("\t\t\t\t\t}\n");
+                sb.append("\t\t\t\t} catch (ExcepcionGeneral eg){\n");
+                sb.append("\t\t\t\t\ttipoMensaje = \"alert-warning\";\n");
+                sb.append("\t\t\t\t\tmensaje = eg.getMessage();\n");
+                sb.append("\t\t\t\t}\n");
+                sb.append("\t\t\t}\n");
+                sb.append("\n");
+                sb.append("\t\t\t// Para siempre consultar la lista de objetos\n");
+                sb.append("\t\t\ttry{\n");
+                sb.append("\t\t\t\tlista = n");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(".consultar((short) 4, sTipoConsulta, o");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(", credencial);\n");
+                sb.append("\t\t\t} catch (ExcepcionGeneral eg){\n");
+                sb.append("\t\t\t\ttipoMensajeLista = \"alert-warning\";\n");
+                sb.append("\t\t\t\tmensajeLista = eg.getMessage();\n");
+                sb.append("\t\t\t}\n\n");
+                sb.append("\t\t\trequest.setAttribute(\"tipoMensaje\", tipoMensaje);\n");
+                sb.append("\t\t\trequest.setAttribute(\"mensaje\", mensaje);\n");
+                sb.append("\t\t\trequest.setAttribute(\"tipoMensajeLista\", tipoMensajeLista);\n");
+                sb.append("\t\t\trequest.setAttribute(\"mensajeLista\", mensajeLista);\n");
+                sb.append("\t\t\trequest.setAttribute(\"lista\", lista);\n");
+                sb.append("\t\t\tSUtilidades.irAPagina(\"/");
+                sb.append(jcTabla.getSelectedItem());
+                sb.append(".jsp\", request, response, getServletContext());\n");
+                sb.append("\t\t} else {\n");
+                sb.append("\t\t\tSUtilidades.irAPagina(\"/index.jsp\", request, response, getServletContext());\n");
+                sb.append("\t\t}\n");
+                sb.append("\t}\n");
+                sb.append("@Override\n");
+                sb.append("\tprotected void doGet(HttpServletRequest request, HttpServletResponse response)\n");
+                sb.append("\t\tthrows ServletException, IOException {\n");
+                sb.append("\t\tprocessRequest(request, response);\n");
+                sb.append("\t}\n");
+                sb.append("\t@Override\n");
+                sb.append("\tprotected void doPost(HttpServletRequest request, HttpServletResponse response)\n");
+                sb.append("\t\tthrows ServletException, IOException {\n");
+                sb.append("\t\tprocessRequest(request, response);\n");
+                sb.append("\t}\n");
+                sb.append("\t@Override\n");
+                sb.append("\tpublic String getServletInfo() {\n");
+                sb.append("\t\treturn \"Short description\";\n");
+                sb.append("\t}\n");
+                sb.append("}");
                 archivo = new File(jtNombreArchivo.getText().trim() + ".sql");
                 archivoAGenerar = new PrintWriter(new FileWriter(archivo));
                 archivoAGenerar.println(sb);
