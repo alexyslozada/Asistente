@@ -294,12 +294,12 @@ public class Asistente extends JFrame {
                 sbt.append(jcTabla.getSelectedItem());
                 sbt.append("_sel(smallint, ");
                 if (tipoColumna[0].equals("int2")) {
-                    sbt.append("smallint");
+                    sbt.append("smallint, ");
                 }
                 if (tipoColumna[0].equals("int4") || tipoColumna[0].equals("serial")) {
-                    sbt.append("integer");
+                    sbt.append("integer, ");
                 }
-                sbt.append(")\n");
+                sbt.append("integer DEFAULT 1, integer DEFAULT 5, integer DEFAULT 1, character varying DEFAULT 'asc'::character varying)\n");
                 sb.append(sbt);
                 sb.append("RETURN SETOF ");
                 sb.append(jcTabla.getSelectedItem());
@@ -310,6 +310,11 @@ public class Asistente extends JFrame {
                 sb.append("\t_");
                 sb.append(nombreColumna[0]);
                 sb.append(" alias for $2; -- Id de la tabla\n");
+                sb.append("\tpagina alias for $3;\n");
+                sb.append("\tlimite alias for $4;\n");
+                sb.append("\tcolind alias for $5;\n");
+                sb.append("\tcoldir alias for $6;\n");
+                sb.append("\tinicio integer;\n");
                 sb.append("\t consulta TEXT = 'select ");
                 for (int i = 0; i < nombreColumna.length; i++) {
                     sb.append(nombreColumna[i]);
@@ -321,6 +326,7 @@ public class Asistente extends JFrame {
                 sb.append(jcTabla.getSelectedItem());
                 sb.append("';\n");
                 sb.append("begin\n");
+                sb.append("\tinicio = limite * pagina - limite;\n");
                 sb.append("\tif _tipo = 0 then -- Consulta todos los registros\n");
                 sb.append("\t\tconsulta = consulta;\n");
                 sb.append("\telsif _tipo = 1 then -- Consulta por el id de la tabla\n");
@@ -331,6 +337,7 @@ public class Asistente extends JFrame {
                 sb.append(nombreColumna[0]);
                 sb.append(";\n");
                 sb.append("\tend if;\n");
+                sb.append("\tconsulta = consulta || ' order by ' || colind || ' ' || coldir || ' limit ' || limite || ' offset ' || inicio;\n");
                 sb.append("\treturn query execute consulta;\n");
                 sb.append("end;\n");
                 sb.append("$BODY$\n");
@@ -569,8 +576,8 @@ public class Asistente extends JFrame {
                     sb.append("(");
                     sb.append(i);
                     sb.append(", obj.get");
-                    sb.append(nombreColumna[i].toString().substring(0, 1).toUpperCase());
-                    sb.append(nombreColumna[i].toString().substring(1));
+                    sb.append(nombreColumna[i].substring(0, 1).toUpperCase());
+                    sb.append(nombreColumna[i].substring(1));
                     sb.append("());\n");
                 }
                 sb.append("\t\t\t\t\tbreak;\n");
@@ -605,8 +612,8 @@ public class Asistente extends JFrame {
                     sb.append("(");
                     sb.append(i+1);
                     sb.append(", obj.get");
-                    sb.append(nombreColumna[i].toString().substring(0, 1).toUpperCase());
-                    sb.append(nombreColumna[i].toString().substring(1));
+                    sb.append(nombreColumna[i].substring(0, 1).toUpperCase());
+                    sb.append(nombreColumna[i].substring(1));
                     sb.append("());\n");
                 }
                 sb.append("\t\t\t\t\tbreak;\n");
@@ -622,8 +629,8 @@ public class Asistente extends JFrame {
                     sb.append("Integer");
                 }
                 sb.append("(1, obj.get");
-                sb.append(nombreColumna[0].toString().substring(0, 1).toUpperCase());
-                sb.append(nombreColumna[0].toString().substring(1));
+                sb.append(nombreColumna[0].substring(0, 1).toUpperCase());
+                sb.append(nombreColumna[0].substring(1));
                 sb.append("());\n");
                 sb.append("\t\t\t\t\tbreak;\n");
                 sb.append("\t\t\t\tdefault:\n");
@@ -653,7 +660,7 @@ public class Asistente extends JFrame {
                 sb.append("> consultar(short ta, short tc, O");
                 sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
                 sb.append(jcTabla.getSelectedItem().toString().substring(1));
-                sb.append(" obj, OCredencial cre)\n");
+                sb.append(" obj, OCredencial cre, int pagina, int limite, int columnaOrden, String tipoOrden)\n");
                 sb.append("\t\t\tthrows ExcepcionGeneral {\n");
                 sb.append("\t\tArrayList<O");
                 sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
@@ -666,7 +673,7 @@ public class Asistente extends JFrame {
                 sb.append("\t\t\ttry{\n");
                 sb.append("\t\t\t\tconectar(\"select * from fn_");
                 sb.append(jcTabla.getSelectedItem());
-                sb.append("_sel(?,?)\");\n");
+                sb.append("_sel(?,?,?,?,?,?)\");\n");
                 sb.append("\t\t\t\tsentenciaProcedimiento.setShort(1, tc);\n");
                 sb.append("\t\t\t\tsentenciaProcedimiento.set");
                 if (tipoColumna[1].equals("int2")) {
@@ -678,6 +685,10 @@ public class Asistente extends JFrame {
                 sb.append("(2, obj.get");
                 sb.append(nombreColumna[0]);
                 sb.append("());\n");
+                sb.append("\t\t\t\tsentenciaProcedimiento.setInt(3, pagina);\n");
+                sb.append("\t\t\t\tsentenciaProcedimiento.setInt(4, limite);\n");
+                sb.append("\t\t\t\tsentenciaProcedimiento.setInt(5, columnaOrden);\n");
+                sb.append("\t\t\t\tsentenciaProcedimiento.setString(6, tipoOrden);\n");
                 sb.append("\t\t\t\tgetResultadosProcedimiento();\n");
                 sb.append("\t\t\t\twhile(resultados.next()){\n");
                 sb.append("\t\t\t\t\tO");
@@ -733,7 +744,13 @@ public class Asistente extends JFrame {
                 sb.append("package servlets.ingenioti.org;\n");
                 sb.append("import excepciones.ingenioti.org.ExcepcionGeneral;\n");
                 sb.append("import java.io.IOException;\n");
+                sb.append("import java.io.PrintWriter;\n");
+                sb.append("import java.io.StringWriter;\n");
                 sb.append("import java.util.ArrayList;\n");
+                sb.append("import javax.json.Json;\n");
+                sb.append("import javax.json.JsonArrayBuilder;\n");
+                sb.append("import javax.json.JsonObject;\n");
+                sb.append("import javax.json.JsonWriter;\n");
                 sb.append("import javax.servlet.ServletException;\n");
                 sb.append("import javax.servlet.annotation.WebServlet;\n");
                 sb.append("import javax.servlet.http.HttpServlet;\n");
@@ -749,6 +766,7 @@ public class Asistente extends JFrame {
                 sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
                 sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append(";\n");
+                sb.append("\n");
                 sb.append("@WebServlet(name = \"S");
                 sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
                 sb.append(jcTabla.getSelectedItem().toString().substring(1));
@@ -762,13 +780,19 @@ public class Asistente extends JFrame {
                 sb.append(" extends HttpServlet {\n");
                 sb.append("\tprotected void processRequest(HttpServletRequest request, HttpServletResponse response)\n");
                 sb.append("\t\t\tthrows ServletException, IOException {\n");
-                sb.append("\t\tresponse.setContentType(\"text/html;charset=UTF-8\");\n");
+                sb.append("\t\tresponse.setContentType(\"application/json\");\n");
                 sb.append("\t\tHttpSession sesion = request.getSession();\n");
                 sb.append("\t\tif(SUtilidades.autenticado(sesion)) {\n");
+                sb.append("\t\t\t// Elementos de respuesta");
                 sb.append("\t\t\tString mensaje = \"\";\n");
-                sb.append("\t\t\tString tipoMensaje = \"\";\n");
+                sb.append("\t\t\tshort tipoMensaje = 0;\n");
                 sb.append("\t\t\tString mensajeLista = \"\";\n");
-                sb.append("\t\t\tString tipoMensajeLista = \"\";\n");                
+                sb.append("\t\t\tshort tipoMensajeLista = 0;\n");
+                sb.append("\t\t\tJsonObject modelo, jsLista;\n");
+                sb.append("\t\t\tJsonArrayBuilder jsArray;\n");
+                sb.append("\t\t\tStringWriter sEscritor = new StringWriter();\n");
+                sb.append("\t\t\tJsonWriter jsEscritor = Json.createWriter(sEscritor);\n");
+                sb.append("\n");
                 sb.append("\t\t\tOCredencial credencial = (OCredencial) sesion.getAttribute(\"credencial\");\n");
                 sb.append("\t\t\tString accion = request.getParameter(\"accion\");\n");
                 sb.append("\t\t\tString tipoConsulta = request.getParameter(\"tipoConsulta\");\n");
@@ -784,6 +808,25 @@ public class Asistente extends JFrame {
                 sb.append("\t\t\t} catch (NumberFormatException nfe) {\n");
                 sb.append("\t\t\t\tsTipoConsulta = 0;\n");
                 sb.append("\t\t\t}\n");
+                sb.append("\n");
+                sb.append("\t\t\t// Variables de paginación\n");
+                sb.append("\t\t\tString pagina = request.getParameter(\"pag\");\n");
+                sb.append("\t\t\tString limite = request.getParameter(\"lim\");\n");
+                sb.append("\t\t\tString columnaOrden = request.getParameter(\"cor\");\n");
+                sb.append("\t\t\tString tipoOrden = request.getParameter(\"tor\");\n");
+                sb.append("\n");
+                sb.append("\t\t\tif(tipoOrden == null || tipoOrden.length()==0) tipoOrden = \"asc\";\n");
+                sb.append("\n");
+                sb.append("\t\t\tint iPagina, iLimite, iColumnaOrden;\n");
+                sb.append("\t\t\ttry {\n");
+                sb.append("\t\t\t\tiPagina = Integer.parseInt(pagina);\n");
+                sb.append("\t\t\t\tiLimite = Integer.parseInt(limite);\n");
+                sb.append("\t\t\t\tiColumnaOrden = Integer.parseInt(columnaOrden);\n");
+                sb.append("\t\t\t} catch (NumberFormatException nfe) {\n");
+                sb.append("\t\t\t\tiPagina = 1;\n");
+                sb.append("\t\t\t\tiLimite = 5;\n");
+                sb.append("\t\t\t\tiColumnaOrden = 1;\n");
+                sb.append("\t\t\t}\n\n");
                 for(int i = 0; i < columnas; i++){
                     if(tipoColumna[i].equals("timestamp")){
                         sb.append("\t\t\tSimpleDateFormat sdf = new SimpleDateFormat(\"dd/MM/yyyy\");\n");
@@ -858,13 +901,7 @@ public class Asistente extends JFrame {
                         sb.append(" != null;\n");
                     }
                 }
-                sb.append("\t\t\tArrayList<O");
-                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
-                sb.append(jcTabla.getSelectedItem().toString().substring(1));
-                sb.append("> lista = new ArrayList<O");
-                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
-                sb.append(jcTabla.getSelectedItem().toString().substring(1));
-                sb.append(">();\n");
+                sb.append("\n\t\t\t// Para realizar cualquier accion: insertar, modificar o borrar\n");
                 sb.append("\t\t\t\tN");
                 sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
                 sb.append(jcTabla.getSelectedItem().toString().substring(1));
@@ -904,60 +941,139 @@ public class Asistente extends JFrame {
                     }
                 }
                 sb.append(");\n");
+                sb.append("\n\t\t\t// Preparación de la lista de objetos a retornar\n");
+                sb.append("\t\t\tArrayList<O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("> lista = new ArrayList<O");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(">();\n");
+                sb.append("\t\t\tint totalPaginas = 0;\n");
+                sb.append("\t\t\tint totalRegistros = 0;\n\n");
                 sb.append("\t\t\t// Para realizar la acción de la 1 a la 3\n");
                 sb.append("\t\t\tif(sAccion > 0 && sAccion < 4){\n");
-                sb.append("\t\t\t\tint respuesta = 0;\n");
-                sb.append("\t\t\t\ttry{\n");
-                sb.append("\t\t\t\t\trespuesta = n");
+                sb.append("\t\t\t\t// Validación de campos vacios\n");
+                sb.append("\t\t\t\tif(sAccion != 3 && (");
+                for(int i = 1; i < columnas; i++){
+                    sb.append(nombreColumna[i]);
+                    sb.append(" == null || ");
+                    sb.append(nombreColumna[i]);
+                    sb.append(".length() == 0");
+                    if(i < columnas-1){
+                        sb.append(" || ");
+                    } else {
+                        sb.append(")");
+                    }
+                }
+                sb.append("){");
+                sb.append("\t\t\t\t\ttipoMensaje = 4;\n");
+                sb.append("\t\t\t\t\tmensaje = \"Todos los campos son obligatorios\";\n");
+                sb.append("\t\t\t\t\tmodelo = Json.createObjectBuilder()\n");
+                sb.append("\t\t\t\t\t\t.add(\"tipoMensaje\", tipoMensaje)\n");
+                sb.append("\t\t\t\t\t\t.add(\"mensaje\", mensaje)\n");
+                sb.append("\t\t\t\t\t\t.build();\n");
+                sb.append("\t\t\t\t\tjsEscritor.writeObject(modelo);\n");
+                sb.append("\t\t\t\t} else {");
+                sb.append("\t\t\t\t\tint respuesta = 0;\n");
+                sb.append("\t\t\t\t\ttry{\n");
+                sb.append("\t\t\t\t\t\trespuesta = n");
                 sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
                 sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append(".ejecutarSQL(sAccion, o");
                 sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
                 sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append(", credencial);\n");
-                sb.append("\t\t\t\t\ttipoMensaje = \"alert-danger\";\n");
-                sb.append("\t\t\t\t\tswitch (respuesta) {\n");
-                sb.append("\t\t\t\t\t\tcase 0:\n");
-                sb.append("\t\t\t\t\t\t\tmensaje = \"No existe el objeto a procesar o no se realizó la acción\";\n");
-                sb.append("\t\t\t\t\t\t\tbreak;\n");
-                sb.append("\t\t\t\t\t\tcase 1:\n");
-                sb.append("\t\t\t\t\t\t\ttipoMensaje = \"alert-success\";\n");
-                sb.append("\t\t\t\t\t\t\tmensaje = \"Proceso realizado correctamente\";\n");
-                sb.append("\t\t\t\t\t\t\tbreak;\n");
-                sb.append("\t\t\t\t\t\tcase -1:\n");
-                sb.append("\t\t\t\t\t\t\tmensaje = \"Violación de clave única. No pueden existir dos id repetidos.\";\n");
-                sb.append("\t\t\t\t\t\t\tbreak;\n");
-                sb.append("\t\t\t\t\t\tcase -2:\n");
-                sb.append("\t\t\t\t\t\t\tmensaje = \"Error de llave foranea. No existe la llave primaria o esta tabla tiene dependencias.\";\n");
-                sb.append("\t\t\t\t\t\t\tbreak;\n");
+                sb.append("\t\t\t\t\ttipoMensaje = 3; // Inicia en warning porque es la mayor cantidad de opciones\n");
+                sb.append("\t\t\t\t\tif (respuesta == -2) {\n");
+                sb.append("\t\t\t\t\t\tmensaje = \"Error de llave duplicada\";\n");
+                sb.append("\t\t\t\t\t}\n");
+                sb.append("\t\t\t\t\tif (respuesta == -1){\n");
+                sb.append("\t\t\t\t\t\tmensaje = \"Error de violación de llave foranea. Problema de dependencias.\";\n");
+                sb.append("\t\t\t\t\t}\n");
+                sb.append("\t\t\t\t\tif (respuesta == 0 || respuesta < -1){\n");
+                sb.append("\t\t\t\t\t\tmensaje = \"No se encontró el registro en la BD, o error desconocido de BD.\";\n");
+                sb.append("\t\t\t\t\t}\n");
+                sb.append("\t\t\t\t\tif (respuesta > 0){\n");
+                sb.append("\t\t\t\t\t\tmensaje = \"Proceso realizado correctamente - ID: \"+respuesta;\n");
+                sb.append("\t\t\t\t\t\ttipoMensaje = 1;\n");
                 sb.append("\t\t\t\t\t}\n");
                 sb.append("\t\t\t\t} catch (ExcepcionGeneral eg){\n");
-                sb.append("\t\t\t\t\ttipoMensaje = \"alert-warning\";\n");
+                sb.append("\t\t\t\t\ttipoMensaje = 3;\n");
                 sb.append("\t\t\t\t\tmensaje = eg.getMessage();\n");
                 sb.append("\t\t\t\t}\n");
+                sb.append("\t\t\t\tmodelo = Json.createObjectBuilder()\n");
+                sb.append("\t\t\t\t\t.add(\"tipoMensaje\", tipoMensaje)\n");
+                sb.append("\t\t\t\t\t.add(\"mensaje\", mensaje)\n");
+                sb.append("\t\t\t\t\t.build();\n");
+                sb.append("\t\t\t\tjsEscritor.writeObject(modelo);\n");
+                sb.append("\t\t\t\t}\n");
                 sb.append("\t\t\t}\n");
-                sb.append("\n");
-                sb.append("\t\t\t// Para siempre consultar la lista de objetos\n");
+                sb.append("\t\t\tif (sAccion == 4){ // Consultar");
                 sb.append("\t\t\ttry{\n");
+                sb.append("\t\t\t\ttotalRegistros = n");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append(".getCantidadRegistros(\"");
+                sb.append(jcTabla.getSelectedItem().toString());
+                sb.append("\");\n");
+                sb.append("\t\t\t\tif (totalRegistros > 0){\n");
+                sb.append("\t\t\t\t\ttotalPaginas = (int) Math.ceil((double)totalRegistros/(double)iLimite);\n");
+                sb.append("\t\t\t\t} else {\n");
+                sb.append("\t\t\t\t\ttotalPaginas = 0;\n");
+                sb.append("\t\t\t\t}\n");
+                sb.append("\t\t\t\tif(iPagina > totalPaginas){\n");
+                sb.append("\t\t\t\t\tiPagina = totalPaginas;\n");
+                sb.append("\t\t\t\t}\n");
                 sb.append("\t\t\t\tlista = n");
                 sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
                 sb.append(jcTabla.getSelectedItem().toString().substring(1));
                 sb.append(".consultar((short) 4, sTipoConsulta, o");
                 sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
                 sb.append(jcTabla.getSelectedItem().toString().substring(1));
-                sb.append(", credencial);\n");
+                sb.append(", credencial, iPagina, iLimite, iColumnaOrden, tipoOrden);\n");
+                sb.append("\t\t\t\ttipoMensajeLista = 1;\n");
+                sb.append("\t\t\t\tmensajeLista = \"Cargue de consulta realizado correctamente.\";\n");
                 sb.append("\t\t\t} catch (ExcepcionGeneral eg){\n");
-                sb.append("\t\t\t\ttipoMensajeLista = \"alert-warning\";\n");
+                sb.append("\t\t\t\ttipoMensajeLista = 3;\n");
                 sb.append("\t\t\t\tmensajeLista = eg.getMessage();\n");
                 sb.append("\t\t\t}\n\n");
-                sb.append("\t\t\trequest.setAttribute(\"tipoMensaje\", tipoMensaje);\n");
-                sb.append("\t\t\trequest.setAttribute(\"mensaje\", mensaje);\n");
-                sb.append("\t\t\trequest.setAttribute(\"tipoMensajeLista\", tipoMensajeLista);\n");
-                sb.append("\t\t\trequest.setAttribute(\"mensajeLista\", mensajeLista);\n");
-                sb.append("\t\t\trequest.setAttribute(\"lista\", lista);\n");
-                sb.append("\t\t\tSUtilidades.irAPagina(\"/");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(".jsp\", request, response, getServletContext());\n");
+                sb.append("\t\t\t\tjsArray = Json.createArrayBuilder();\n");
+                sb.append("\t\t\t\tfor(OTiposDeDocumento td: lista){\n");
+                sb.append("\t\t\t\t\tJsonObject temp = Json.createObjectBuilder()\n");
+                for(int i = 0; i < columnas; i++){
+                    sb.append("\t\t\t\t\t\t.add(\"");
+                    sb.append(nombreColumna[i]);
+                    sb.append("\", td.");
+                    if(tipoColumna[i].equals("boolean")){
+                        sb.append("is");
+                    } else {
+                        sb.append("get");
+                    }
+                    sb.append(nombreColumna[i].substring(1, 1).toUpperCase());
+                    sb.append(nombreColumna[i].substring(2));
+                    sb.append("())");
+                }
+                sb.append("\t\t\t\t\t\t.build();\n");
+                sb.append("\t\t\t\t\tjsArray.add(temp);\n");
+                sb.append("\t\t\t\t}\n");
+                sb.append("\t\t\t\tjsLista = Json.createObjectBuilder()\n");
+                sb.append("\t\t\t\t\t.add(\"tipoMensajeLista\", tipoMensajeLista)\n");
+                sb.append("\t\t\t\t\t.add(\"mensajeLista\", mensajeLista)\n");
+                sb.append("\t\t\t\t\t.add(\"registros\", totalRegistros)\n");
+                sb.append("\t\t\t\t\t.add(\"paginas\", totalPaginas)\n");
+                sb.append("\t\t\t\t\t.add(\"lista\", jsArray)\n");
+                sb.append("\t\t\t\t\t.build();\n");
+                sb.append("\t\t\t\tjsEscritor.writeObject(jsLista);\n");
+                sb.append("\t\t\t}\n");
+                sb.append("\t\t\tjsEscritor.close();\n\n");
+                sb.append("\t\t\tString jsObjeto = sEscritor.toString();\n");
+                sb.append("\t\t\tPrintWriter out = response.getWriter();\n");
+                sb.append("\t\t\ttry {\n");
+                sb.append("\t\t\t\tout.println(jsObjeto);\n");
+                sb.append("\t\t\t} finally {\n");
+                sb.append("\t\t\t\tout.close();\n");
+                sb.append("\t\t\t}\n");
                 sb.append("\t\t} else {\n");
                 sb.append("\t\t\tSUtilidades.irAPagina(\"/index.jsp\", request, response, getServletContext());\n");
                 sb.append("\t\t}\n");
