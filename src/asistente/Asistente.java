@@ -645,6 +645,8 @@ public class Asistente extends JFrame {
                 sb.append("\t\t\t\tcerrarConexion();\n");
                 sb.append("\t\t\t} catch (SQLException sqle){}\n");
                 sb.append("\t\t}\n");
+                sb.append("\t\t} else {\n");
+                sb.append("\t\t\tthrow new ExcepcionGeneral(\"Usted no tiene permiso para realizar esta acción.\");\n");
                 sb.append("\t\t}\n");
                 sb.append("\t\treturn respuesta;\n");
                 sb.append("\t}\n");
@@ -731,7 +733,7 @@ public class Asistente extends JFrame {
                 sb.append("\t\t\t\t} catch (SQLException sqle){}\n");
                 sb.append("\t\t\t}\n");
                 sb.append("\t\t} else {\n");
-                sb.append("\t\t\tthrow new ExcepcionGeneral(getNoAutenticado());\n");
+                sb.append("\t\t\tthrow new ExcepcionGeneral(\"No está autorizado para consultar la lista.\");\n");
                 sb.append("\t\t}\n");
                 sb.append("\t\treturn lista;\n");
                 sb.append("\t}\n");
@@ -833,7 +835,7 @@ public class Asistente extends JFrame {
                 for(int i = 0; i < columnas; i++){
                     sb.append("\t\t\tString s");
                     sb.append(nombreColumna[i]);
-                    sb.append(" = request.getParameter(\"_");
+                    sb.append(" = request.getParameter(\"");
                     sb.append(nombreColumna[i]);
                     sb.append("\");\n");
                 }
@@ -857,7 +859,7 @@ public class Asistente extends JFrame {
                         sb.append(nombreColumna[i]);
                         sb.append(");\n");
                         sb.append("\t\t\t} catch (NumberFormatException nfe){\n");
-                        sb.append("\t\t\t\tSystem.err.println(\"Error al convertir: _");
+                        sb.append("\t\t\t\tSystem.err.println(\"Error al convertir: ");
                         sb.append(nombreColumna[i]);
                         if(tipoColumna[i].equals("int2")){
                             sb.append(" en Short ");
@@ -1093,6 +1095,181 @@ public class Asistente extends JFrame {
                 sb.append("\t\treturn \"Short description\";\n");
                 sb.append("\t}\n");
                 sb.append("}");
+                sb.append("\n");
+                sb.append("// JSP - HTML\n");
+                sb.append("<%\n");
+                sb.append("\tString usuario = \"\";\n");
+                sb.append("\tif (session.getAttribute(\"credencial\") != null) {\n");
+                sb.append("\t\tobjetos.ingenioti.org.OCredencial credencial = (objetos.ingenioti.org.OCredencial) session.getAttribute(\"credencial\");\n");
+                sb.append("\t\tusuario = credencial.getUsuario().getNombreCompleto();\n");
+                sb.append("\t\tif (usuario.length() <= 0) {\n");
+                sb.append("\t\t\tresponse.sendRedirect(\"index.jsp\");\n");
+                sb.append("\t\t}\n");
+                sb.append("\t} else {\n");
+                sb.append("\t\tresponse.sendRedirect(\"index.jsp\");\n");
+                sb.append("\t}\n");
+                sb.append("%>\n");
+                sb.append("<%@page contentType=\"text/html\" pageEncoding=\"UTF-8\"%>\n");
+                sb.append("<!DOCTYPE html>\n");
+                sb.append("<html>\n");
+                sb.append("<head>\n");
+                sb.append("\t<meta charset=\"utf-8\">\n");
+                sb.append("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no, maximum-scale=1\">\n");
+                sb.append("\t<meta name=\"description\" content=\"Herramientas para el control de información\">\n");
+                sb.append("\t<meta name=\"author\" content=\"Alexys Lozada\">\n");
+                sb.append("\t<title>H.C.I. Herramientas para el control de información</title>\n");
+                sb.append("\t<script src=\"js/jquery-1.9.1.min.js\"></script>\n");
+                sb.append("\t<script src=\"js/bootstrap.min.js\"></script>\n");
+                sb.append("\t<script src=\"js/eventoAjax.jQuery.js\"></script>\n");
+                sb.append("\t<link rel=\"stylesheet\" href=\"css/bootstrap.min.css\" />\n");
+                sb.append("\t<link rel=\"stylesheet\" href=\"css/estilo.css\" />\n");
+                sb.append("</head>\n");
+                sb.append("<body>\n");
+                sb.append("\t<header>\n");
+                sb.append("\t\t<jsp:include flush=\"true\" page=\"encabezado.jsp\">\n");
+                sb.append("\t\t<jsp:param name=\"usuario\" value=\"<%=usuario%>\" />\n");
+                sb.append("\t</jsp:include>\n");
+                sb.append("\t</header>\n");
+                sb.append("\t<section>\n");
+                sb.append("\t\t<div class=\"row\">\n");
+                sb.append("\t\t<form id=\"frmFormulario\" class=\"form-horizontal\" role=\"form\" action=\"S");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("\" method=\"post\">\n");
+                sb.append("\t\t\t<fieldset class=\"col-sm-3 col-sm-offset-1 col-lg-3 col-lg-offset-2\">\n");
+                sb.append("\t\t\t\t<legend>");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("</legend>\n");
+                for(int i = 0; i < columnas; i++){
+                    sb.append("\t\t\t\t<div class=\"input-group\">\n");
+                    sb.append("\t\t\t\t\t<span class=\"input-group-addon\">");
+                    sb.append(nombreColumna[i]);
+                    sb.append("</span>\n");
+                    sb.append("\t\t\t\t\t<input type=\"");
+                    if (tipoColumna[i].equals("int2") || tipoColumna[i].equals("int4") || tipoColumna[i].equals("serial")) {
+                        sb.append("number");
+                    }
+                    if (tipoColumna[i].equals("varchar")) {
+                        sb.append("text");
+                    }
+                    if (tipoColumna[i].equals("timestamp")) {
+                        sb.append("date");
+                    }
+                    if (tipoColumna[i].equals("bool")) {
+                        sb.append("chackbox");
+                    }
+                    sb.append("\" class=\"form-control\" id=\"");
+                    sb.append(nombreColumna[i]);
+                    sb.append("\" name=\"");
+                    sb.append(nombreColumna[i]);
+                    sb.append("\" placeholder=\"");
+                    sb.append(nombreColumna[i]);
+                    if(i==0){
+                        sb.append("\" readonly>\n");
+                    } else {
+                        sb.append("\" required>\n");
+                    }
+                    sb.append("\t\t\t\t</div>\n");
+                }
+                sb.append("\t\t\t\t<div class=\"form-group\">\n");
+                sb.append("\t\t\t\t\t<button data-accion=\"1\" type=\"submit\" class=\"btn btn-primary\" id=\"btnGuardar\"><span class=\"glyphicon glyphicon-floppy-disk\">&nbsp;</span>Guardar</button>\n");
+                sb.append("\t\t\t\t\t<button class=\"btn btn-warning\" id=\"btnCancelar\"><span class=\"glyphicon glyphicon-remove\">&nbsp;</span>Cancelar</button>\n");
+                sb.append("\t\t\t\t</div>\n");
+                sb.append("\t\t\t</fieldset>\n");
+                sb.append("\t\t</form>\n");
+                sb.append("\t\t</div>\n");
+                sb.append("\t\t<div id=\"unDiv\"></div>\n");
+                sb.append("\t</section>\n");
+                sb.append("\t<section>\n");
+                sb.append("\t\t<div id=\"msgLista\"></div>\n");
+                sb.append("\t\t<div class=\"row\">\n");
+                sb.append("\t\t\t<div class=\"col-sm-10 col-sm-offset-1\">\n");
+                sb.append("\t\t\t\t<form id=\"frmLista\" class=\"form-horizontal\" role=\"form\" action=\"S");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("\" method=\"post\">");
+                sb.append("\t\t\t\t\t<div class=\"input-group\">\n");
+                sb.append("\t\t\t\t\t\t<span class=\"input-group-addon\">Página</span>\n");
+                sb.append("\t\t\t\t\t\t<input class=\"form-control\" type=\"number\" id=\"pag\" name=\"pag\" value=\"1\" required>\n");
+                sb.append("\t\t\t\t\t\t<span class=\"input-group-addon\">de</span>\n");
+                sb.append("\t\t\t\t\t\t<span class=\"input-group-addon\" id=\"totpag\">1</span>\n");
+                sb.append("\t\t\t\t\t\t<span class=\"input-group-addon\">Cantidad</span>\n");
+                sb.append("\t\t\t\t\t\t<input type=\"number\" class=\"form-control\" id=\"lim\" name=\"lim\" min=\"10\" max=\"100\" step=\"10\" value=\"10\">\n");
+                sb.append("\t\t\t\t\t\t<span class=\"input-group-addon\">Orden:</span>\n");
+                sb.append("\t\t\t\t\t\t<select class=\"form-control\" id=\"cor\" name=\"cor\">\n");
+                for(int i = 0; i < columnas; i++){
+                    sb.append("\t\t\t\t\t\t\t<option value=\"");
+                    sb.append(i+1);
+                    sb.append("\"");
+                    sb.append("\">");
+                    sb.append(nombreColumna[i]);
+                    sb.append("</option>\n");
+                }
+                sb.append("\t\t\t\t\t\t</select>\n");
+                sb.append("\t\t\t\t\t\t<span class=\"input-group-addon\">/</span>\n");
+                sb.append("\t\t\t\t\t\t<select class=\"form-control\" id=\"tor\" name=\"tor\">\n");
+                sb.append("\t\t\t\t\t\t\t<option value=\"asc\">Ascendente</option>\n");
+                sb.append("\t\t\t\t\t\t\t<option value=\"desc\">Descendente</option>\n");
+                sb.append("\t\t\t\t\t\t</select>\n");
+                sb.append("\t\t\t\t\t\t<span class=\"input-group-addon\" id=\"datosListaFiltrada\"></span>\n");
+                sb.append("\t\t\t\t\t\t<span class=\"input-group-btn\">\n");
+                sb.append("\t\t\t\t\t\t\t<button class=\"btn btn-default\" type=\"button\" id=\"btnListar\">Listar</button>\n");
+                sb.append("\t\t\t\t\t\t</span>\n");
+                sb.append("\t\t\t\t\t</div>\n");
+                sb.append("\t\t\t\t</form>\n");
+                sb.append("\t\t\t</div>\n");
+                sb.append("\t\t\t</div>\n");
+                sb.append("\t\t</section>\n");
+                sb.append("\t\t<section>\n");
+                sb.append("\t\t\t<div class=\"table-responsive\">\n");
+                sb.append("\t\t\t\t<table class=\"table table-hover table-bordered table-condensed\">\n");
+                sb.append("\t\t\t\t\t<caption><h3>Listado de ");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1));
+                sb.append("</h3></caption>\n");
+                sb.append("\t\t\t\t\t<thead>\n");
+                sb.append("\t\t\t\t\t\t<tr>");
+                for(int i = 0; i < columnas; i++){
+                    sb.append("<th>");
+                    sb.append(nombreColumna[i]);
+                    sb.append("</th>");
+                }
+                sb.append("<th colspan=\"2\">Acciones</th>");
+                sb.append("</tr>\n");
+                sb.append("\t\t\t\t\t</thead>\n");
+                sb.append("\t\t\t\t\t<tbody id=\"cuerpoLista\">\n");
+                sb.append("\t\t\t\t\t</tbody>\n");
+                sb.append("\t\t\t\t</table>\n");
+                sb.append("\t\t\t</div>\n");
+                sb.append("\t\t</section>\n");
+                sb.append("\t<script>\n");
+                sb.append("\t\t$(document).on('ready',function(){\n");
+                sb.append("\t\t\tvar nombres = [");
+                for(int i = 0; i < columnas; i++){
+                    sb.append("'");
+                    sb.append(nombreColumna[i]);
+                    sb.append("'");
+                    if(i < columnas -1){
+                        sb.append(", ");
+                    }
+                }
+                sb.append("];\n");
+                sb.append("\t\t\tvar campos = [");
+                for(int i = 0; i < columnas; i++){
+                    sb.append("'#");
+                    sb.append(nombreColumna[i]);
+                    sb.append("'");
+                    if(i < columnas -1){
+                        sb.append(", ");
+                    }
+                }
+                sb.append("];\n");
+                sb.append("\t\t\t$('#frmFormulario').eventoAjax('#btnGuardar','#btnCancelar','#unDiv','#frmLista','#msgLista','#cuerpoLista',nombres, campos);\n");
+                sb.append("\t\t});\n");
+                sb.append("\t</script>\n");
+                sb.append("</body>\n");
+                sb.append("</html>");
                 archivo = new File(jtNombreArchivo.getText().trim() + ".sql");
                 archivoAGenerar = new PrintWriter(new FileWriter(archivo));
                 archivoAGenerar.println(sb);
