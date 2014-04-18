@@ -40,7 +40,7 @@ public class Asistente extends JFrame {
     private final JLabel jlTitulo = new JLabel("Asistente para Formularios");
     private final JLabel jlBase = new JLabel("Base de Datos:");
     private final JLabel jlTabla = new JLabel("Tabla:");
-    private final JLabel jlNombreArchivo = new JLabel("Nombre del Archivo:");
+    //private final JLabel jlNombreArchivo = new JLabel("Nombre del Archivo:");
     private final JLabel jlTituloPanel = new JLabel("Titulo del Panel:");
     private final JLabel jlDescripcionPanel = new JLabel("Descripcion del Panel:");
     private final JLabel jlNombreObjeto = new JLabel("Nombre del Objeto:");
@@ -62,6 +62,10 @@ public class Asistente extends JFrame {
     private Connection conexion;
     private Vector<String> vBases = new Vector<String>();
     private Vector<String> vTablas = new Vector<String>();
+    
+    private String usuario = "postgres";
+    private String claveus = "postgres";
+    private String databas = "postgres";
 
     // Este es para generar el archivo plano
     File archivo = null;
@@ -116,7 +120,7 @@ public class Asistente extends JFrame {
     private void llenaBases() {
         try {
             Class.forName("org.postgresql.Driver");
-            conexion = DriverManager.getConnection("jdbc:postgresql://127.0.0.1/Tampa", "usringenio", "usringenio");
+            conexion = DriverManager.getConnection("jdbc:postgresql://127.0.0.1/"+databas, usuario, claveus);
         } catch (ClassNotFoundException cnfe) {
             JOptionPane.showMessageDialog(null, "Error de cnfe: " + cnfe, "Error de clase", JOptionPane.DEFAULT_OPTION);
         } catch (SQLException sqle) {
@@ -146,7 +150,7 @@ public class Asistente extends JFrame {
         try {
             Class.forName("org.postgresql.Driver");
             String url = "jdbc:postgresql://127.0.0.1/" + baseOrigen;
-            conexion = DriverManager.getConnection(url, "usringenio", "usringenio");
+            conexion = DriverManager.getConnection(url, usuario, claveus);
         } catch (ClassNotFoundException cnfe) {
             JOptionPane.showMessageDialog(null, "Error de cnfe: " + cnfe, "Error de clase", JOptionPane.DEFAULT_OPTION);
         } catch (SQLException sqle) {
@@ -182,7 +186,7 @@ public class Asistente extends JFrame {
             try {
                 Class.forName("org.postgresql.Driver");
                 String url = "jdbc:postgresql://127.0.0.1/" + jcBase.getSelectedItem();
-                conexion = DriverManager.getConnection(url, "usringenio", "usringenio");
+                conexion = DriverManager.getConnection(url, usuario, claveus);
             } catch (ClassNotFoundException cnfe) {
                 JOptionPane.showMessageDialog(null, "Error de cnfe: " + cnfe, "Error de clase", JOptionPane.DEFAULT_OPTION);
             } catch (SQLException sqle) {
@@ -202,6 +206,9 @@ public class Asistente extends JFrame {
                     nombreColumna[i] = estructura.getColumnName(i + 1);
                     tamanioColumna[i] = estructura.getPrecision(i + 1);
                     tipoColumna[i] = estructura.getColumnTypeName(i + 1);
+                }
+                for(int i = 0; i < columnas; i++){
+                    System.out.println(tipoColumna[i]);
                 }
             } catch (SQLException sqle) {
                 JOptionPane.showMessageDialog(null, "Error de sqle: " + sqle, "Error de sql", JOptionPane.DEFAULT_OPTION);
@@ -227,6 +234,9 @@ public class Asistente extends JFrame {
                     }
                     if (tipoColumna[i].equals("timestamp")) {
                         sbt.append("timestamp");
+                    }
+                    if(tipoColumna[i].equals("date")){
+                        sbt.append("date");
                     }
                     if (tipoColumna[i].equals("bool")) {
                         sbt.append("boolean");
@@ -336,7 +346,10 @@ public class Asistente extends JFrame {
                 sb.append(nombreColumna[0]);
                 sb.append(";\n");
                 sb.append("\tend if;\n");
-                sb.append("\tconsulta = consulta || ' order by ' || colind || ' ' || coldir || ' limit ' || limite || ' offset ' || inicio;\n");
+                sb.append("\tconsulta = consulta || ' order by ' || colind || ' ' || coldir;\n");
+                sb.append("\tif limite > 0 then\n");
+                sb.append("\t\tconsulta = consulta || ' limit ' || limite || ' offset ' || inicio;\n");
+                sb.append("\tend if;\n");
                 sb.append("\treturn query execute consulta;\n");
                 sb.append("end;\n");
                 sb.append("$BODY$\n");
@@ -368,6 +381,9 @@ public class Asistente extends JFrame {
                     }
                     if (tipoColumna[i].equals("timestamp")) {
                         sbt.append("timestamp");
+                    }
+                    if (tipoColumna[i].equals("date")){
+                        sbt.append("date");
                     }
                     if (tipoColumna[i].equals("bool")) {
                         sbt.append("boolean");
@@ -499,7 +515,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("String");
                     }
-                    if (tipoColumna[i].equals("timestamp")) {
+                    if (tipoColumna[i].equals("timestamp") || tipoColumna[i].equals("date")) {
                         sb.append("Calendar");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -518,7 +534,7 @@ public class Asistente extends JFrame {
                 sb.append("\n");
                 sb.append("//NEGOCIO\n");
                 sb.append("package negocio.ingenioti.org;\n");
-                sb.append("import excepciones.ingenioti.org.ExcepcionGeneral;");
+                sb.append("import excepciones.ingenioti.org.ExcepcionGeneral;\n");
                 sb.append("import java.sql.SQLException;\n");
                 sb.append("import java.util.ArrayList;\n");
                 sb.append("import objetos.ingenioti.org.OCredencial;\n");
@@ -562,7 +578,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("String");
                     }
-                    if (tipoColumna[i].equals("timestamp")) {
+                    if (tipoColumna[i].equals("timestamp") || tipoColumna[i].equals("date")) {
                         sb.append("Date");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -598,7 +614,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("String");
                     }
-                    if (tipoColumna[i].equals("timestamp")) {
+                    if (tipoColumna[i].equals("timestamp") || tipoColumna[i].equals("date")) {
                         sb.append("Date");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -677,7 +693,7 @@ public class Asistente extends JFrame {
                     sb.append("Short");
                 }
                 if (tipoColumna[1].equals("int4") || tipoColumna[1].equals("serial")) {
-                    sb.append("Integer");
+                    sb.append("Int");
                 }
                 sb.append("(2, obj.get");
                 sb.append(nombreColumna[0].substring(0, 1).toUpperCase());
@@ -710,7 +726,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("String");
                     }
-                    if (tipoColumna[i].equals("timestamp")) {
+                    if (tipoColumna[i].equals("timestamp") || tipoColumna[i].equals("date")) {
                         sb.append("Date");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -827,7 +843,7 @@ public class Asistente extends JFrame {
                 sb.append("\t\t\t\tiColumnaOrden = 1;\n");
                 sb.append("\t\t\t}\n\n");
                 for(int i = 0; i < columnas; i++){
-                    if(tipoColumna[i].equals("timestamp")){
+                    if(tipoColumna[i].equals("timestamp") || tipoColumna[i].equals("date")){
                         sb.append("\t\t\tSimpleDateFormat sdf = new SimpleDateFormat(\"dd/MM/yyyy\");\n");
                         break;
                     }
@@ -872,7 +888,7 @@ public class Asistente extends JFrame {
                         sb.append("\");\n");
                         sb.append("\t\t\t}\n");
                     }
-                    if (tipoColumna[i].equals("timestamp")) {
+                    if (tipoColumna[i].equals("timestamp") || tipoColumna[i].equals("date")) {
                         sb.append("\t\t\tCalendar c");
                         sb.append(nombreColumna[i]);
                         sb.append(" = new GregorianCalendar();\n");
@@ -928,7 +944,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("s");
                     }
-                    if (tipoColumna[i].equals("timestamp")) {
+                    if (tipoColumna[i].equals("timestamp") || tipoColumna[i].equals("date")) {
                         sb.append("c");
                     }
                     if (tipoColumna[i].equals("bool")) {
@@ -1113,16 +1129,12 @@ public class Asistente extends JFrame {
                 sb.append("<!DOCTYPE html>\n");
                 sb.append("<html>\n");
                 sb.append("<head>\n");
-                sb.append("\t<meta charset=\"utf-8\">\n");
-                sb.append("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no, maximum-scale=1\">\n");
-                sb.append("\t<meta name=\"description\" content=\"Herramientas para el control de información\">\n");
-                sb.append("\t<meta name=\"author\" content=\"Alexys Lozada\">\n");
-                sb.append("\t<title>H.C.I. Herramientas para el control de información</title>\n");
-                sb.append("\t<script src=\"js/jquery-1.9.1.min.js\"></script>\n");
-                sb.append("\t<script src=\"js/bootstrap.min.js\"></script>\n");
-                sb.append("\t<script src=\"js/eventoAjax.jQuery.js\"></script>\n");
-                sb.append("\t<link rel=\"stylesheet\" href=\"css/bootstrap.min.css\" />\n");
-                sb.append("\t<link rel=\"stylesheet\" href=\"css/estilo.css\" />\n");
+                sb.append("\t<jsp:include flush=\"true\" page=\"head.jsp\">\n");
+                sb.append("\t\t<jsp:param name=\"pagina\" value=\"");
+                sb.append(jcTabla.getSelectedItem().toString().substring(0, 1).toUpperCase());
+                sb.append(jcTabla.getSelectedItem().toString().substring(1).toLowerCase());
+                sb.append("\" />\n");
+                sb.append("\t</jsp:include>\n");
                 sb.append("</head>\n");
                 sb.append("<body>\n");
                 sb.append("\t<header>\n");
@@ -1153,7 +1165,7 @@ public class Asistente extends JFrame {
                     if (tipoColumna[i].equals("varchar")) {
                         sb.append("text");
                     }
-                    if (tipoColumna[i].equals("timestamp")) {
+                    if (tipoColumna[i].equals("timestamp") || tipoColumna[i].equals("date")) {
                         sb.append("date");
                     }
                     if (tipoColumna[i].equals("bool")) {
