@@ -336,9 +336,7 @@ public class Asistente extends JFrame {
                 sb.append("';\n");
                 sb.append("begin\n");
                 sb.append("\tinicio = limite * pagina - limite;\n");
-                sb.append("\tif _tipo = 0 then -- Consulta todos los registros\n");
-                sb.append("\t\tconsulta = consulta;\n");
-                sb.append("\telsif _tipo = 1 then -- Consulta por el id de la tabla\n");
+                sb.append("\tif _tipo = 1 then -- Consulta por el id de la tabla\n");
                 sb.append("\t\tconsulta = consulta || ' where ");
                 sb.append(nombreColumna[0]);
                 sb.append(" = ' || ");
@@ -526,9 +524,9 @@ public class Asistente extends JFrame {
                     sb.append(";\n");
                 }
                 sb.append("\t@Override\n");
-                sb.append("\tpublic String getDescripcion(){}\n");
+                sb.append("\tpublic String getDescripcion(){ return null; }\n");
                 sb.append("\t@Override\n");
-                sb.append("\tpublic String getXML(){}\n");
+                sb.append("\tpublic String getXML(){ return null; }\n");
                 sb.append("}");
                 //NEGOCIO
                 sb.append("\n");
