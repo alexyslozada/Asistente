@@ -1153,9 +1153,11 @@ public class Asistente extends JFrame {
                 sb.append("</legend>\n");
                 for(int i = 0; i < columnas; i++){
                     sb.append("\t\t\t\t<div class=\"input-group\">\n");
-                    sb.append("\t\t\t\t\t<span class=\"input-group-addon\">");
+                    sb.append("\t\t\t\t\t<label for=\"");
                     sb.append(nombreColumna[i]);
-                    sb.append("</span>\n");
+                    sb.append("\">");
+                    sb.append(nombreColumna[i]);
+                    sb.append("</label>\n");
                     sb.append("\t\t\t\t\t<input type=\"");
                     if (tipoColumna[i].equals("int2") || tipoColumna[i].equals("int4") || tipoColumna[i].equals("serial")) {
                         sb.append("number");
