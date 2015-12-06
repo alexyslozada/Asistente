@@ -5,6 +5,7 @@
  */
 package asistente;
 
+import conexion.Conexion;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -14,12 +15,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -29,7 +29,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.util.Vector;
+import objetos.Estructura;
 
 /**
  *
@@ -40,7 +40,7 @@ public class Asistente extends JFrame {
     private final JLabel jlTitulo = new JLabel("Asistente para Formularios");
     private final JLabel jlBase = new JLabel("Base de Datos:");
     private final JLabel jlTabla = new JLabel("Tabla:");
-    //private final JLabel jlNombreArchivo = new JLabel("Nombre del Archivo:");
+    private final JLabel jlNombreArchivo = new JLabel("Nombre del Archivo:");
     private final JLabel jlTituloPanel = new JLabel("Titulo del Panel:");
     private final JLabel jlDescripcionPanel = new JLabel("Descripcion del Panel:");
     private final JLabel jlNombreObjeto = new JLabel("Nombre del Objeto:");
@@ -59,36 +59,35 @@ public class Asistente extends JFrame {
 
     private final JPanel jpPanel = new JPanel();
 
-    private Connection conexion;
-    private Vector<String> vBases = new Vector<String>();
-    private Vector<String> vTablas = new Vector<String>();
-    
-    private String usuario = "postgres";
-    private String claveus = "postgres";
-    private String databas = "postgres";
+    private final String usuario = "contable";
+    private final String claveus = "contable";
+    private final String databas = "contabilidad";
+
+    // Lista de tablas
+    List<String> tablas = new ArrayList<>();
 
     // Este es para generar el archivo plano
     File archivo = null;
     PrintWriter archivoAGenerar = null;
 
-    int columnas; // Este guarda la cantidad de columnas de la tabla
-    String nombreColumna[];  // Este guarda el nombre de las columnas de la tabla
-    int tamanioColumna[];  // Este guarda el tamanio de la columna
-    String tipoColumna[];  // Este guarda el tipo de columna
-
+    // Logger
+    private static final Logger LOG = Logger.getLogger(Asistente.class.getName());
+    
     public Asistente() {
 
         super("Asistente para Formularios");
 
         jbEscoje.addActionListener(new SeleccionaArchivo());
-        llenaBases();
+        //llenaBases();
         jcBase.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                llenaTablas((String) jcBase.getSelectedItem());
+                //llenaTablas((String) jcBase.getSelectedItem());
+                llenaTablas();
             }
         });
-        jbGenerar.addActionListener(new GeneraPlano());
+        llenaTablas();
+        //jbGenerar.addActionListener(new GeneraPlano());
         jbGenSQL.addActionListener(new GeneraSQL());
 
         jpPanel.setLayout(new GridLayout(8, 2));
@@ -98,7 +97,7 @@ public class Asistente extends JFrame {
         jpPanel.add(jcBase);
         jpPanel.add(jlTabla);
         jpPanel.add(jcTabla);
-        //jpPanel.add(jlNombreArchivo);
+        jpPanel.add(jlNombreArchivo);
         jpPanel.add(jbEscoje);
         jpPanel.add(jtNombreArchivo);
         jpPanel.add(jlTituloPanel);
@@ -117,6 +116,7 @@ public class Asistente extends JFrame {
         setVisible(true);
     }
 
+/*    
     private void llenaBases() {
         try {
             Class.forName("org.postgresql.Driver");
@@ -144,38 +144,19 @@ public class Asistente extends JFrame {
             JOptionPane.showMessageDialog(null, "Error de sql: " + sqle, "Error de sql", JOptionPane.DEFAULT_OPTION);
         }
     }
-
-    private void llenaTablas(String baseOrigen) {
+*/
+    
+    private void llenaTablas() {
         jcTabla.removeAllItems();
-        try {
-            Class.forName("org.postgresql.Driver");
-            String url = "jdbc:postgresql://127.0.0.1/" + baseOrigen;
-            conexion = DriverManager.getConnection(url, usuario, claveus);
-        } catch (ClassNotFoundException cnfe) {
-            JOptionPane.showMessageDialog(null, "Error de cnfe: " + cnfe, "Error de clase", JOptionPane.DEFAULT_OPTION);
-        } catch (SQLException sqle) {
-            JOptionPane.showMessageDialog(null, "Error de sqle: " + sqle, "Error de sql", JOptionPane.DEFAULT_OPTION);
-        }
-
-        try {
-            Statement sentencia = conexion.createStatement();
-            String consulta = "SELECT c.relname "
-                    + "FROM pg_catalog.pg_class c JOIN pg_catalog.pg_roles r ON r.oid = c.relowner "
-                    + "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
-                    + "WHERE c.relkind ='r' AND n.nspname NOT IN ('pg_catalog', 'pg_toast') "
-                    + "AND pg_catalog.pg_table_is_visible(c.oid) ORDER BY 1";
-            ResultSet resultados = sentencia.executeQuery(consulta);
-
-            while (resultados.next()) {
-                vTablas.add(resultados.getString(1));
-                jcTabla.addItem(resultados.getString(1));
+        try{
+            tablas = new Conexion(databas, usuario, claveus).getTablas();
+            for(String tabla : tablas){
+                System.out.println(tabla);
+                jcTabla.addItem(tabla);
             }
-
-            resultados.close();
-            sentencia.close();
-            conexion.close();
-        } catch (SQLException sqle) {
-            JOptionPane.showMessageDialog(null, "Error de sqle: " + sqle, "Error de sql", JOptionPane.DEFAULT_OPTION);
+        } catch (SQLException sqle){
+            JOptionPane.showMessageDialog(null, "Error encontrado: "+sqle.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            LOG.log(Level.SEVERE, "Error encontrado: {0}", new Object[]{sqle.getMessage()});
         }
     }
 
@@ -183,316 +164,210 @@ public class Asistente extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            try {
-                Class.forName("org.postgresql.Driver");
-                String url = "jdbc:postgresql://127.0.0.1/" + jcBase.getSelectedItem();
-                conexion = DriverManager.getConnection(url, usuario, claveus);
-            } catch (ClassNotFoundException cnfe) {
-                JOptionPane.showMessageDialog(null, "Error de cnfe: " + cnfe, "Error de clase", JOptionPane.DEFAULT_OPTION);
-            } catch (SQLException sqle) {
-                JOptionPane.showMessageDialog(null, "Error de sqle: " + sqle, "Error de sql", JOptionPane.DEFAULT_OPTION);
-            }
-
-            try {
-                Statement sentencia = conexion.createStatement();
-                String consulta = "select * from  " + jcTabla.getSelectedItem() + " limit 1";
-                ResultSet resultados = sentencia.executeQuery(consulta);
-                ResultSetMetaData estructura = resultados.getMetaData();
-                columnas = estructura.getColumnCount();
-                nombreColumna = new String[columnas];
-                tamanioColumna = new int[columnas];
-                tipoColumna = new String[columnas];
-                for (int i = 0; i < columnas; i++) {
-                    nombreColumna[i] = estructura.getColumnName(i + 1);
-                    tamanioColumna[i] = estructura.getPrecision(i + 1);
-                    tipoColumna[i] = estructura.getColumnTypeName(i + 1);
-                }
-                for(int i = 0; i < columnas; i++){
-                    System.out.println(tipoColumna[i]);
-                }
-            } catch (SQLException sqle) {
-                JOptionPane.showMessageDialog(null, "Error de sqle: " + sqle, "Error de sql", JOptionPane.DEFAULT_OPTION);
-            }
             // Genera el contenido
+            String tabla = jcTabla.getSelectedItem().toString();
+            List<Estructura> estructura = null;
+            try{
+                estructura = new Conexion(databas, usuario, claveus).getEstructura(tabla);
+            } catch (SQLException sqle){
+                LOG.log(Level.SEVERE, "Error encontrado GeneraSQL: {0}", new Object[]{sqle.getMessage()});
+            }
+            int columnas;
+            columnas = estructura.size();
+            
             try {
                 StringBuilder sb = new StringBuilder();
-                StringBuilder sbt = new StringBuilder();
+                StringBuilder sb_fn_name = new StringBuilder();
                 // FUNCION INSERTAR
+                sb.append("-- FUNCION INSERTAR\n");
                 sb.append("CREATE OR REPLACE FUNCTION ");
-                sbt.append("fn_");
-                sbt.append(jcTabla.getSelectedItem());
-                sbt.append("_ins(");
+                sb_fn_name.append("fn_");
+                sb_fn_name.append(tabla);
+                sb_fn_name.append("_ins(");
+                sb_fn_name.append(getFunctionParameters(columnas, estructura, 1));
+                sb_fn_name.append(")");
+                sb.append(sb_fn_name);
+                sb.append("\n");
+                sb.append("RETURNS smallint AS\n");
+                sb.append("$BODY$\n");
+                sb.append("DECLARE\n");
+                sb.append("\tresultado smallint;\n");
+                sb.append("BEGIN\n");
+                sb.append("\tINSERT INTO ");
+                sb.append(tabla);
+                sb.append(" VALUES (DEFAULT, ");
                 for (int i = 1; i < columnas; i++) {
-                    if (tipoColumna[i].equals("int2")) {
-                        sbt.append("smallint");
-                    }
-                    if (tipoColumna[i].equals("int4") || tipoColumna[i].equals("serial")) {
-                        sbt.append("integer");
-                    }
-                    if (tipoColumna[i].equals("varchar")) {
-                        sbt.append("character varying");
-                    }
-                    if (tipoColumna[i].equals("timestamp")) {
-                        sbt.append("timestamp");
-                    }
-                    if(tipoColumna[i].equals("date")){
-                        sbt.append("date");
-                    }
-                    if (tipoColumna[i].equals("bool")) {
-                        sbt.append("boolean");
-                    }
-                    if (i < columnas - 1) {
-                        sbt.append(", ");
-                    }
-                    //System.out.println(tipoColumna[i]);
+                    String campo = estructura.get(i).columna;
+                    sb.append(campo.substring(0, 3));
+                    sb.append(", ");
                 }
-                sbt.append(")");
-                sb.append(sbt);
-                sb.append("\n");
-                sb.append("RETURNS integer AS\n");
-                sb.append("$BODY$\n");
-                sb.append("declare\n");
-                for (int i = 1; i < nombreColumna.length; i++) {
-                    sb.append("\t_");
-                    sb.append(nombreColumna[i]);
-                    sb.append(" alias for $");
-                    sb.append((i));
-                    sb.append(";\n");
-                }
-                sb.append("begin\n");
-                sb.append("\tinsert into ");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" values (default, ");
-                for (int i = 1; i < nombreColumna.length; i++) {
-                    sb.append("_");
-                    sb.append(nombreColumna[i]);
-                    if (i < nombreColumna.length - 1) {
-                        sb.append(", ");
-                    }
-                }
-                sb.append(");\n");
-                sb.append("\tif found then\n");
-                sb.append("\t\treturn currval('sqc_");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append("'); -- Se ingreso correctamente el registro\n");
-                sb.append("\telse\n");
-                sb.append("\t\treturn 0; -- Error de la base de datos\n");
-                sb.append("\tend if;\n");
-                sb.append("exception\n");
-                sb.append("\twhen foreign_key_violation then\n");
-                sb.append("\t\treturn -1; -- Error de violacion de FK\n");
-                sb.append("\twhen unique_violation then\n");
-                sb.append("\t\treturn -2; -- Error de violacion de UK\n");
-                sb.append("end;\n");
+                sb.delete(sb.length()-2, sb.length());
+                sb.append(") RETURNING ");
+                sb.append(estructura.get(0).columna);
+                sb.append(" INTO resultado;\n");
+                sb.append("\tRETURN resultado;\n");
+                sb.append("END;\n");
                 sb.append("$BODY$\n");
                 sb.append("\tLANGUAGE plpgsql VOLATILE\n");
                 sb.append("\tCOST 100;\n");
                 sb.append("ALTER FUNCTION ");
-                sb.append(sbt);
-                sb.append("\n");
-                sb.append("OWNER TO usringenio;\n");
+                sb.append(sb_fn_name);
+                sb.append(" OWNER TO ");
+                sb.append(usuario);
+                sb.append(";\n");
                 sb.append("COMMENT ON FUNCTION ");
-                sb.append(sbt);
-                sb.append(" IS 'Funcion que permite insertar ");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append("';\n");
+                sb.append(sb_fn_name);
+                sb.append(" IS 'Insertar registros en");
+                sb.append(tabla);
+                sb.append("';\n\n");
+                
                 //FUNCION SELECCIONAR
+                sb.append("-- FUNCION SELECCIONAR RETORNANDO JSON\n");
                 sb.append("CREATE OR REPLACE FUNCTION ");
-                sbt = new StringBuilder();
-                sbt.append("fn_");
-                sbt.append(jcTabla.getSelectedItem());
-                sbt.append("_sel(smallint, ");
-                if (tipoColumna[0].equals("int2")) {
-                    sbt.append("smallint, ");
-                }
-                if (tipoColumna[0].equals("int4") || tipoColumna[0].equals("serial")) {
-                    sbt.append("integer, ");
-                }
-                sbt.append("integer DEFAULT 1, integer DEFAULT 5, integer DEFAULT 1, character varying DEFAULT 'asc'::character varying)\n");
-                sb.append(sbt);
-                sb.append("RETURNS SETOF ");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" AS\n");
+                sb_fn_name = new StringBuilder();
+                sb_fn_name.append("fn_");
+                sb_fn_name.append(tabla);
+                sb_fn_name.append("_sel_json(tipo smallint DEFAULT 0, ide smallint DEFAULT 0, ");
+                sb_fn_name.append("pagina smallint DEFAULT 1, limite smallint DEFAULT 10, columna_orden smallint DEFAULT 1, tipo_orden character varying DEFAULT 'asc'::character varying)\n");
+                sb.append(sb_fn_name);
+                sb.append("RETURNS SETOF json AS\n");
                 sb.append("$BODY$\n");
-                sb.append("declare\n");
-                sb.append("\t_tipo alias for $1; -- Tipo de busqueda\n");
-                sb.append("\t_");
-                sb.append(nombreColumna[0]);
-                sb.append(" alias for $2; -- Id de la tabla\n");
-                sb.append("\tpagina alias for $3;\n");
-                sb.append("\tlimite alias for $4;\n");
-                sb.append("\tcolind alias for $5;\n");
-                sb.append("\tcoldir alias for $6;\n");
-                sb.append("\tinicio integer;\n");
-                sb.append("\t consulta TEXT = 'select ");
-                for (int i = 0; i < nombreColumna.length; i++) {
-                    sb.append(nombreColumna[i]);
-                    if (i < nombreColumna.length - 1) {
-                        sb.append(", ");
-                    }
-                }
-                sb.append(" from ");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append("';\n");
-                sb.append("begin\n");
-                sb.append("\tinicio = limite * pagina - limite;\n");
-                sb.append("\tif _tipo = 1 then -- Consulta por el id de la tabla\n");
-                sb.append("\t\tconsulta = consulta || ' where ");
-                sb.append(nombreColumna[0]);
-                sb.append(" = ' || ");
-                sb.append("_");
-                sb.append(nombreColumna[0]);
-                sb.append(";\n");
-                sb.append("\tend if;\n");
-                sb.append("\tconsulta = consulta || ' order by ' || colind || ' ' || coldir;\n");
-                sb.append("\tif limite > 0 then\n");
-                sb.append("\t\tconsulta = consulta || ' limit ' || limite || ' offset ' || inicio;\n");
-                sb.append("\tend if;\n");
-                sb.append("\treturn query execute consulta;\n");
-                sb.append("end;\n");
-                sb.append("$BODY$\n");
-                sb.append("\tLANGUAGE plpgsql VOLATILE\n");
-                sb.append("\tCOST 100;\n");
-                sb.append("ALTER FUNCTION ");
-                sb.append(sbt);
-                sb.append("OWNER TO usringenio;\n");
-                sb.append("COMMENT ON FUNCTION ");
-                sb.append(sbt);
-                sb.append(" IS 'Funcion que permite consultar ");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append("';\n");
-                //FUNCION ACTUALIZAR
-                sb.append("CREATE OR REPLACE FUNCTION ");
-                sbt = new StringBuilder();
-                sbt.append("fn_");
-                sbt.append(jcTabla.getSelectedItem());
-                sbt.append("_upd(");
+                sb.append("DECLARE\n");
+                sb.append("\tinicio smallint = limite * pagina - limite;\n");
+                sb.append("\tconsulta_general text = 'SELECT array_to_json(array_agg(row_to_json(t))) FROM (';\n");
+                sb.append("\tconsulta TEXT = 'SELECT ");
                 for (int i = 0; i < columnas; i++) {
-                    if (tipoColumna[i].equals("int2")) {
-                        sbt.append("smallint");
-                    }
-                    if (tipoColumna[i].equals("int4") || tipoColumna[i].equals("serial")) {
-                        sbt.append("integer");
-                    }
-                    if (tipoColumna[i].equals("varchar")) {
-                        sbt.append("character varying");
-                    }
-                    if (tipoColumna[i].equals("timestamp")) {
-                        sbt.append("timestamp");
-                    }
-                    if (tipoColumna[i].equals("date")){
-                        sbt.append("date");
-                    }
-                    if (tipoColumna[i].equals("bool")) {
-                        sbt.append("boolean");
-                    }
-                    if (i < columnas - 1) {
-                        sbt.append(", ");
-                    }
-                    //System.out.println(tipoColumna[i]);
+                    sb.append(estructura.get(i).columna);
+                    sb.append(", ");
                 }
-                sbt.append(")\n");
-                sb.append(sbt);
-                sb.append("RETURNS smallint AS\n");
-                sb.append("$BODY$\n");
-                sb.append("declare\n");
-                for (int i = 0; i < nombreColumna.length; i++) {
-                    sb.append("\t_");
-                    sb.append(nombreColumna[i]);
-                    sb.append(" alias for $");
-                    sb.append((i + 1));
-                    sb.append(";\n");
-                }
+                sb.delete(sb.length()-2, sb.length());
+                sb.append(" FROM ");
+                sb.append(tabla);
+                sb.append("';\n");
                 sb.append("BEGIN\n");
-                sb.append("\tupdate ");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" set ");
-                for (int i = 1; i < nombreColumna.length; i++) {
-                    sb.append(nombreColumna[i]);
-                    sb.append(" = _");
-                    sb.append(nombreColumna[i]);
-                    if (i < nombreColumna.length - 1) {
-                        sb.append(", ");
-                    }
-                }
-                sb.append(" where ");
-                sb.append(nombreColumna[0]);
-                sb.append(" = ");
-                sb.append("_");
-                sb.append(nombreColumna[0]);
-                sb.append(";\n");
-                sb.append("\tif found then\n");
-                sb.append("\t\treturn 1; -- Se actualizo correctamente\n");
-                sb.append("\telse\n");
-                sb.append("\t\treturn 0; -- Error de la BD\n");
-                sb.append("\tend if;\n");
-                sb.append("exception\n");
-                sb.append("\twhen foreign_key_violation then\n");
-                sb.append("\t\treturn -1; -- Error de violacion de FK\n");
-                sb.append("\twhen unique_violation then\n");
-                sb.append("\t\treturn -2; -- Error de violacion de UK\n");
-                sb.append("end;\n");
+                sb.append("\tIF tipo = 0 THEN\n");
+                sb.append("\t\t -- Consulta todos los registros, optimiza el condicional\n");
+                sb.append("\tELSIF tipo = 1 THEN -- Consulta por el id de la tabla\n");
+                sb.append("\t\tconsulta = consulta || ' WHERE ");
+                sb.append(estructura.get(0).columna);
+                sb.append(" = ' || ide;\n");
+                sb.append("\tEND IF;\n\n");
+                sb.append("\tIF tipo = 0 THEN -- Si son varios registros se ordenan\n");
+                sb.append("\t\tconsulta = consulta || ' ORDER BY ' || columna_orden || ' ' || tipo_orden;\n");
+                sb.append("\tEND IF;\n\n");
+                sb.append("\tIF limite > 0 THEN -- Si hay límite se limita\n");
+                sb.append("\t\tconsulta = consulta || ' LIMIT ' || limite || ' OFFSET ' || inicio;\n");
+                sb.append("\tEND IF;\n\n");
+                sb.append("\tconsulta_general = consulta_general || consulta || ') AS t';\n\n");
+                sb.append("\tRETURN QUERY EXECUTE consulta_general;\n");
+                sb.append("END;\n");
                 sb.append("$BODY$\n");
                 sb.append("\tLANGUAGE plpgsql VOLATILE\n");
                 sb.append("\tCOST 100;\n");
                 sb.append("ALTER FUNCTION ");
-                sb.append(sbt);
-                sb.append("OWNER TO usringenio;\n");
+                sb.append(sb_fn_name);
+                sb.append("OWNER TO ");
+                sb.append(usuario);
+                sb.append(";\n");
                 sb.append("COMMENT ON FUNCTION ");
-                sb.append(sbt);
-                sb.append(" IS 'Funcion que permite actualizar ");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append("';\n");
-                sb.append("\n");
-                //FUNCION PARA BORRAR
+                sb.append(sb_fn_name);
+                sb.append(" IS 'Seleccionar registros de ");
+                sb.append(tabla);
+                sb.append(" y los retorna tipo json.';\n\n");
+                
+                //FUNCION ACTUALIZAR
+                sb.append("-- FUNCION ACTUALIZAR\n");
                 sb.append("CREATE OR REPLACE FUNCTION ");
-                sbt = new StringBuilder();
-                sbt.append("fn_");
-                sbt.append(jcTabla.getSelectedItem());
-                sbt.append("_del(");
-                if (tipoColumna[0].equals("int2")) {
-                    sbt.append("smallint");
-                }
-                if (tipoColumna[0].equals("int4") || tipoColumna[0].equals("serial")) {
-                    sbt.append("integer");
-                }
-                sbt.append(")\n");
-                sb.append(sbt);
-                sb.append("RETURNS smallint AS\n");
+                sb_fn_name = new StringBuilder();
+                sb_fn_name.append("fn_");
+                sb_fn_name.append(tabla);
+                sb_fn_name.append("_upd(");
+                sb_fn_name.append(getFunctionParameters(columnas, estructura, 0));
+                sb_fn_name.append(")\n");
+                sb.append(sb_fn_name);
+                sb.append("RETURNS boolean AS\n");
                 sb.append("$BODY$\n");
-                sb.append("declare\n");
-                sb.append("\t_");
-                sb.append(nombreColumna[0]);
-                sb.append(" alias for $1; -- Id de la tabla\n");
+                sb.append("DECLARE\n");
+                sb.append("\tresultado boolean = false;\n");
                 sb.append("BEGIN\n");
-                sb.append("\tdelete from ");
-                sb.append(jcTabla.getSelectedItem());
-                sb.append(" where ");
-                sb.append(nombreColumna[0]);
-                sb.append(" = _");
-                sb.append(nombreColumna[0]);
+                sb.append("\tUPDATE ");
+                sb.append(tabla);
+                sb.append(" SET ");
+                for (int i = 1; i < columnas; i++) {
+                    String columna = estructura.get(i).columna;
+                    String abrevia = columna.substring(0,3);
+                    sb.append(columna);
+                    sb.append(" = ");
+                    sb.append(abrevia);
+                    sb.append(", ");
+                }
+                sb.delete(sb.length()-2, sb.length());
+                sb.append(" WHERE ");
+                sb.append(estructura.get(0).columna);
+                sb.append(" = ");
+                sb.append(estructura.get(0).columna.substring(0, 3));
                 sb.append(";\n");
-                sb.append("\tif found then\n");
-                sb.append("\t\treturn 1; -- Se elimino correctamente el registro\n");
-                sb.append("\telse\n");
-                sb.append("\t\treturn 0; -- Error de la base de datos\n");
-                sb.append("\tend if;\n");
-                sb.append("exception\n");
-                sb.append("\twhen foreign_key_violation then\n");
-                sb.append("\t\treturn -1; -- Error de violacion de FK\n");
-                sb.append("end;\n");
+                sb.append("\tIF FOUND THEN\n");
+                sb.append("\t\tresultado = true;\n");
+                sb.append("\tEND IF;\n\n");
+                sb.append("\tRETURN resultado;\n\n");
+                sb.append("END;\n");
                 sb.append("$BODY$\n");
                 sb.append("\tLANGUAGE plpgsql VOLATILE\n");
                 sb.append("\tCOST 100;\n");
                 sb.append("ALTER FUNCTION ");
-                sb.append(sbt);
-                sb.append("OWNER TO usringenio;\n");
+                sb.append(sb_fn_name);
+                sb.append("OWNER TO ");
+                sb.append(usuario);
+                sb.append(";\n");
                 sb.append("COMMENT ON FUNCTION ");
-                sb.append(sbt);
-                sb.append(" IS 'Funcion que permite actualizar ");
-                sb.append(jcTabla.getSelectedItem());
+                sb.append(sb_fn_name);
+                sb.append(" IS 'Actualiza registros de la tabla ");
+                sb.append(tabla);
+                sb.append("';\n\n");
+
+                //FUNCION PARA BORRAR
+                sb.append("-- FUNCION BORRAR\n");
+                sb.append("CREATE OR REPLACE FUNCTION ");
+                sb_fn_name = new StringBuilder();
+                sb_fn_name.append("fn_");
+                sb_fn_name.append(tabla);
+                sb_fn_name.append("_del(ide smallint");
+                sb_fn_name.append(")\n");
+                sb.append(sb_fn_name);
+                sb.append("RETURNS boolean AS\n");
+                sb.append("$BODY$\n");
+                sb.append("DECLARE\n");
+                sb.append("\tresultado boolean = false;\n");
+                sb.append("BEGIN\n");
+                sb.append("\tDELETE FROM ");
+                sb.append(tabla);
+                sb.append(" WHERE ");
+                sb.append(estructura.get(0).columna);
+                sb.append(" = ide;\n");
+                sb.append("\tIF FOUND THEN\n");
+                sb.append("\t\tresultado = true;\n");
+                sb.append("\tEND IF;\n");
+                sb.append("\tEXCEPTION\n");
+                sb.append("\t\tWHEN foreign_key_violation THEN\n");
+                sb.append("\t\t\tRAISE EXCEPTION 'Este registro tiene movimientos';\n");
+                sb.append("END;\n");
+                sb.append("$BODY$\n");
+                sb.append("\tLANGUAGE plpgsql VOLATILE\n");
+                sb.append("\tCOST 100;\n");
+                sb.append("ALTER FUNCTION ");
+                sb.append(sb_fn_name);
+                sb.append("OWNER TO ");
+                sb.append(usuario);
+                sb.append(";\n");
+                sb.append("COMMENT ON FUNCTION ");
+                sb.append(sb_fn_name);
+                sb.append(" IS 'Borrar registros de ");
+                sb.append(tabla);
                 sb.append("';\n");
                 sb.append("\n");
+                
+/*                
                 //CREA OBJETO JAVA
                 sb.append("\n");
                 sb.append("//OBJETO JAVA\n");
@@ -1282,6 +1157,7 @@ public class Asistente extends JFrame {
                 sb.append("\t</script>\n");
                 sb.append("</body>\n");
                 sb.append("</html>");
+        */
                 archivo = new File(jtNombreArchivo.getText().trim() + ".sql");
                 archivoAGenerar = new PrintWriter(new FileWriter(archivo));
                 archivoAGenerar.println(sb);
@@ -1293,6 +1169,7 @@ public class Asistente extends JFrame {
         }
     }
 
+/*    
     private class GeneraPlano implements ActionListener {
 
         @Override
@@ -1863,10 +1740,45 @@ public class Asistente extends JFrame {
             JOptionPane.showMessageDialog(null, "Proceso Terminado!!!", "Proceso Terminado", JOptionPane.DEFAULT_OPTION);
         }
     }
-
+*/
+    private String getFunctionParameters(int columnas, List<Estructura> estructura, int inicio){
+        StringBuilder sb_fn_name = new StringBuilder();
+        for(int i = inicio; i < columnas; i++){
+            String tipo = estructura.get(i).tipo;
+            String campo = estructura.get(i).columna;
+            sb_fn_name.append(campo.substring(0, 3));
+            switch(tipo){
+                case "int2":
+                    sb_fn_name.append(" smallint");
+                    break;
+                case "int4":
+                    sb_fn_name.append(" integer");
+                    break;
+                case "varchar":
+                    sb_fn_name.append(" character varying");
+                    break;
+                case "timestamp":
+                    sb_fn_name.append(" timestamp");
+                    break;
+                case "date":
+                    sb_fn_name.append(" date");
+                    break;
+                case "bool":
+                    sb_fn_name.append(" boolean");
+                    break;
+                default:
+                    sb_fn_name.append(" no_defined");
+            }
+            sb_fn_name.append(", ");
+        }
+        sb_fn_name.delete(sb_fn_name.length()-2, sb_fn_name.length());
+        return sb_fn_name.toString();
+    }
+    
     // Accion de escojer el archivo
     private class SeleccionaArchivo implements ActionListener {
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             JFileChooser fc = new JFileChooser();
             FileNameExtensionFilter filtro = new FileNameExtensionFilter("Archivos java", "java");
